@@ -20,37 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "cache.hpp"
+#pragma once
 
-namespace cache
-{
+#include "../common/utility.hpp"
 
-Cache::Cache(const CacheConfig& config)
-    : size(config.size), associativity(config.associativity),
-    blockSize(config.blockSize), replacementPolicy(config.policy)
-{
-    numOfBlocks = number_of_blocks(size, blockSize);
-    numOfSets   = number_of_sets(numOfBlocks, associativity);
-
-    // calculate associativity type
-    if (associativity == 1) {
-        associativityType = CacheAssociativityType::DirectMapping;
-    } else if (associativity == numOfBlocks) {
-        associativityType = CacheAssociativityType::FullyAssociative;
-    } else {
-        associativityType = CacheAssociativityType::SetAssociative;
-    }
-
-    // Initialize cache
-    sets.resize(numOfSets);
-    replacementPolicySet.resize(numOfSets);
-
-    for (int i = 0; i < numOfSets; i++) {
-        auto &set = sets[i];
-        set.blocks.resize(associativity);
-
-        replacementPolicySet[i] = ReplacementPolicyFactory(replacementPolicy, associativity);
-    }
-}
-    
-} // namespace cache
+class Memory {
+public:
+    virtual void access(uint32 address, bool isWrite) = 0;
+    virtual ~Memory() = default;
+};

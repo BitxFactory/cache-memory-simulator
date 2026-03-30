@@ -20,16 +20,42 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#include "replacement_policy.hpp"
 
-#include <cstdint>
+namespace cache
+{
 
-typedef std::uint32_t uint32;
-
-uint32 number_of_blocks(uint32 size, uint32 blockSize) {
-    return size / blockSize;
+// FIFO Policy implementations
+void FIFOPolicy::onAccess(uint32 blockInd) {
+    // no state change on access
+    (void)blockInd;
 }
 
-uint32 number_of_sets(uint32 numBlocks, uint32 associativity) {
-    return numBlocks / associativity;
+void FIFOPolicy::onInsert(uint32 blockInd) {
+    order[blockInd] = ++counter;
 }
+
+uint32 FIFOPolicy::getVictim(const std::vector<bool>& validBlocks)  {
+    std::optional<uint32> victim;
+    uint32 maxCounter = UINT32_MAX;
+
+    for (uint32 i = 0; i < validBlocks.size(); i++) {
+        if (validBlocks[i] && order[i] < maxCounter) {
+            maxCounter = order[i];
+            victim = i;
+        }
+    }
+
+    return (victim.has_value()) ? *victim : 0;
+}
+
+std::string_view FIFOPolicy::getName() const {
+    return "FIFO";
+}
+
+void FIFOPolicy::reset() {
+    std::fill(order.begin(), order.end(), 0);
+    counter = 0;
+}
+
+} // namespace cache

@@ -26,8 +26,9 @@
 #include <optional>
 #include <memory>
 
-#include "cache_block.h"
-#include "memory.h"
+#include "cache_block.hpp"
+#include "memory.hpp"
+#include "replacement_policy.hpp"
 
 namespace cache {
 
@@ -49,13 +50,13 @@ struct CacheConfig {
     uint32 size;           ///< size of cache in bytes
     uint32 associativity;  ///< number of ways in a set
     uint32 blockSize;      ///< size of each cache block in bytes
+    ReplacementPolicyType policy; ///< replacement policy
 
     CacheConfig() = default;
 
-    CacheConfig(uint32 sz, uint32 assoc, uint32 blockSize): 
-        size(sz),
-        associativity(assoc),
-        blockSize(blockSize)
+    CacheConfig(uint32 sz, uint32 assoc, uint32 blockSize, ReplacementPolicyType policy)
+        : size(sz), associativity(assoc),
+          blockSize(blockSize), policy(policy)
     {
         // basic sanity
         assert(size > 0 && 
@@ -106,6 +107,8 @@ private:
     uint32 numOfBlocks;    ///< number of blocks (cache lines) in the cache
     uint32 numOfSets;      ///< number of sets cache is logically divided into
 
+    ReplacementPolicyType replacementPolicy;  ///< replacement policy of cache
+
     std::optional<std::shared_ptr<Memory>> nextMemoryLevel; ///< next memory level in the memory hierarchy
 
     // types
@@ -113,6 +116,7 @@ private:
     
     // cache tag array and data
     std::vector<CacheSet> sets; ///< cache set
+    std::vector<std::unique_ptr<ReplacementPolicy>> replacementPolicySet; ///< replacement policy set
 
     // Stats
     int hits;   ///< number of hits

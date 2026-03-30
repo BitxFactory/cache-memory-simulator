@@ -20,37 +20,42 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "cache.hpp"
+#pragma once
 
-namespace cache
-{
+#include <vector>
 
-Cache::Cache(const CacheConfig& config)
-    : size(config.size), associativity(config.associativity),
-    blockSize(config.blockSize), replacementPolicy(config.policy)
-{
-    numOfBlocks = number_of_blocks(size, blockSize);
-    numOfSets   = number_of_sets(numOfBlocks, associativity);
+#include "../common/utility.hpp"
 
-    // calculate associativity type
-    if (associativity == 1) {
-        associativityType = CacheAssociativityType::DirectMapping;
-    } else if (associativity == numOfBlocks) {
-        associativityType = CacheAssociativityType::FullyAssociative;
-    } else {
-        associativityType = CacheAssociativityType::SetAssociative;
-    }
+namespace cache {
 
-    // Initialize cache
-    sets.resize(numOfSets);
-    replacementPolicySet.resize(numOfSets);
+/**
+ * @struct CacheBlock
+ * @brief smallest unit of data that can be transferred between main memory and the cache
+ */
+struct CacheBlock {
+    bool valid;    ///< valid bit
+    bool dirty;    ///< dirty bit
+    uint32 tag;    ///< tag bits for address loop
 
-    for (int i = 0; i < numOfSets; i++) {
-        auto &set = sets[i];
-        set.blocks.resize(associativity);
+    std::vector<uint32> data; ///< Data stored in this block (assuming 1 word = 4bytes)
 
-        replacementPolicySet[i] = ReplacementPolicyFactory(replacementPolicy, associativity);
-    }
-}
-    
+    uint32 accessCount;      ///< number of times accessed
+    uint64 lastAccess;       ///< timestamp of last accessed
+
+    /* CacheBlock constructor */
+    CacheBlock(bool valid = false, bool dirty = false, uint32 tag = 0):
+        valid(valid),
+        dirty(dirty),
+        tag(tag)
+    {}
+};
+
+/**
+ * @struct CacheSet
+ * @brief cache set structure
+ */
+struct CacheSet {
+    std::vector<CacheBlock> blocks;  ///< cache block constituting the set
+};
+
 } // namespace cache

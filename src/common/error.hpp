@@ -20,12 +20,3 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
-#include "../common.h"
-
-class Memory {
-public:
-    virtual void access(uint32 address, bool isWrite) = 0;
-    virtual ~Memory() = default;
-};

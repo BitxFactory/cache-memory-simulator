@@ -29,6 +29,8 @@
 
 #include "../common/utility.hpp"
 
+namespace cache
+{   
 /**
  * @enum ReplacementPolicyType
  * @brief replacement policies
@@ -82,43 +84,17 @@ public:
  */
 class FIFOPolicy: public ReplacementPolicy {
 public:   
-    explicit FIFOPolicy(int numBlocks)
+    explicit FIFOPolicy(uint32 numBlocks)
         : order(numBlocks)
     {
         reset();
     }
 
-    void onAccess(uint32 blockInd) override {
-        // no change in order
-        (void)blockInd;
-    }
-
-    void onInsert(uint32 blockInd) override {
-        order[blockInd] = ++counter;
-    }
-
-    uint32 getVictim(const std::vector<bool>& validBlocks) override {
-        std::optional<uint32> victim;
-        uint32 maxCounter = UINT32_MAX;
-
-        for (uint32 i = 0; i < validBlocks.size(); i++) {
-            if (validBlocks[i] && order[i] < maxCounter) {
-                maxCounter = order[i];
-                victim = i;
-            }
-        }
-
-        return (victim.has_value()) ? *victim : 0;
-    }
-
-    void reset() override {
-        std::fill(order.begin(), order.end(), 0);
-        counter = 0;
-    }
-
-    std::string_view getName() const override {
-        return "FIFO";
-    }
+    void reset() override;
+    void onAccess(uint32 blockInd) override;
+    void onInsert(uint32 blockInd) override;
+    std::string_view getName() const override;
+    uint32 getVictim(const std::vector<bool>& validBlocks) override;
 
 private:
     // FIFO policy states
@@ -126,6 +102,15 @@ private:
     uint32 counter;
 };
 
-std::unique_ptr<ReplacementPolicy> CreateReplacementPolicy(ReplacementPolicyType policy, uint32 numBlocks) {
-
+std::unique_ptr<ReplacementPolicy> ReplacementPolicyFactory(ReplacementPolicyType policy, uint32 numBlocks) {
+    switch (policy)
+    {
+    case ReplacementPolicyType::FIFO:
+        return std::make_unique<FIFOPolicy>(numBlocks);
+    default:
+        break;
+    }
 }
+
+} // namespace cache
+

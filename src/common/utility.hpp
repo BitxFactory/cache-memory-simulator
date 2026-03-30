@@ -22,37 +22,15 @@
 
 #pragma once
 
-#include <vector>
+#include <cstdint>
 
-#include "../common.h"
+typedef std::uint32_t uint32;
+typedef std::uint64_t uint64;
 
-namespace cache {
+uint32 number_of_blocks(uint32 size, uint32 blockSize) {
+    return size / blockSize;
+}
 
-/**
- * @struct CacheBlock
- * @brief smallest unit of data that can be transferred between main memory and the cache
- */
-struct CacheBlock {
-    bool valid;    ///< valid bit
-    bool dirty;    ///< dirty bit
-    uint32 tag;    ///< tag bits for address loop
-
-    std::vector<uint32> data; ///< Data stored in this block (assuming 1 word = 4bytes)
-
-    /* CacheBlock constructor */
-    CacheBlock(bool valid = false, bool dirty = false, uint32 tag = 0):
-        valid(valid),
-        dirty(dirty),
-        tag(tag)
-    {}
-};
-
-/**
- * @struct CacheSet
- * @brief cache set structure
- */
-struct CacheSet {
-    std::vector<CacheBlock> blocks;  ///< cache block constituting the set
-};
-
-} // namespace cache
+uint32 number_of_sets(uint32 numBlocks, uint32 associativity) {
+    return numBlocks / associativity;
+}
