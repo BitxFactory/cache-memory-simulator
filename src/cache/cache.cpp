@@ -149,14 +149,24 @@ bool Cache::findBlock(uint32 tag, int setId, uint32* blockNum) const {
     return false;
 }
 
-uint32 Cache::createEmptyBlock(int setId) const {
+uint32 Cache::createEmptyBlock(int setId) {
     auto &set = sets[setId];
+    bool hasInvalidBlock = false;
 
     // find invalid block before eviction
     for (uint32 i = 0; i < set.blocks.size(); i++) {
         if (!set.blocks[i].valid) {
+            hasInvalidBlock = true;
             return i;
         }
+    }
+
+    if (hasInvalidBlock) {
+        missType = CacheMissType::CompulsoryMiss;
+    } else if (associativity < numOfSets) {
+        missType = CacheMissType::ConflictMiss;
+    } else {
+        missType = CacheMissType::CapacityMiss;
     }
 
     // all ways are filled, evict one

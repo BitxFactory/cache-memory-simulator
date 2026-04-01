@@ -153,7 +153,7 @@ private:
 
     // types
     CacheAssociativityType associativityType; ///< type of cache associativity
-    CacheMissType          missType;          ///< type of cache miss
+    CacheMissType missType;          ///< type of cache miss
     
     // cache tag array and data
     std::vector<CacheSet> sets; ///< cache set
@@ -197,15 +197,7 @@ private:
      * @brief find the available block, if not present replace one
      * @returns the block number
      */
-    uint32 createEmptyBlock(int setId) const;
-
-    /**
-     * @param address the address
-     * @param setId the set ID of the address
-     * @param blockInd the block index evicted
-     * @brief reads the block from the lower levels and install it
-     */
-    void installBlock(uint32 address, int setId, uint32 blockInd) const;
+    uint32 createEmptyBlock(int setId);
 
     /**
      * @param dst the destination
@@ -213,13 +205,6 @@ private:
      * @brief copy data from src to dst
      */
     void copyData(std::span<uint8> dst, const std::span<uint8> src);
-
-    /**
-     * @param address the address
-     * @param data the data to be read/write
-     * @brief read/write data to/from bus based on write flag
-     */
-    void handleDataReadWrite(uint32 address, std::vector<uint8>& data);
 };
 
 } // namespace cache
