@@ -24,8 +24,14 @@
 
 #include <cstdint>
 
+typedef std::uint8_t uint8;
 typedef std::uint32_t uint32;
 typedef std::uint64_t uint64;
+
+#define BYTE 1        // in bytes
+#define HALF_WORD 2   // in bytes
+#define WORD 4        // in bytes
+#define DOUBLE_WORD 8 // in bytes
 
 uint32 number_of_blocks(uint32 size, uint32 blockSize) {
     return size / blockSize;
@@ -33,4 +39,12 @@ uint32 number_of_blocks(uint32 size, uint32 blockSize) {
 
 uint32 number_of_sets(uint32 numBlocks, uint32 associativity) {
     return numBlocks / associativity;
+}
+
+uint32 line_address(uint32 address, uint32 blockSize) {
+    return address / blockSize;
+}
+
+uint32 offset(uint32 address, uint32 blockSize) {
+    return address % blockSize;
 }

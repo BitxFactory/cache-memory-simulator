@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "../common/utility.hpp"
+#include "utility.hpp"
 
 class Memory {
 public:
-    virtual void access(uint32 address, bool isWrite) = 0;
+    virtual void access(uint32 address, bool isWrite, std::vector<uint8>& data) = 0;
     virtual ~Memory() = default;
 };

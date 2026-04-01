@@ -33,17 +33,20 @@ namespace cache {
  * @brief smallest unit of data that can be transferred between main memory and the cache
  */
 struct CacheBlock {
-    bool valid;    ///< valid bit
-    bool dirty;    ///< dirty bit
-    uint32 tag;    ///< tag bits for address loop
+    bool valid = false;    ///< valid bit
+    bool dirty = false;    ///< dirty bit
+    uint32 tag;            ///< tag bits for address loop
 
-    std::vector<uint32> data; ///< Data stored in this block (assuming 1 word = 4bytes)
+    std::vector<uint8> data; ///< Data stored in this block (assuming 1 word = 4bytes)
 
     uint32 accessCount;      ///< number of times accessed
     uint64 lastAccess;       ///< timestamp of last accessed
 
+    /* CacheBlock Default constructor */
+    CacheBlock() {}
+
     /* CacheBlock constructor */
-    CacheBlock(bool valid = false, bool dirty = false, uint32 tag = 0):
+    CacheBlock(uint32 blockSize, bool valid = false, bool dirty = false, uint32 tag = 0):
         valid(valid),
         dirty(dirty),
         tag(tag)
