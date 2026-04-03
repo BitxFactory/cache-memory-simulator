@@ -28,12 +28,23 @@
 
 #include "utility.hpp"
 
+constexpr bool is_power_of_2(uint32 v);
+constexpr uint8_t log2_of(uint32 v);
+
 struct SystemConfig {
     uint8 address_bus_width;  ///< address bits supported in bits (max 64)
     uint8 data_bus_width;     ///< data bits supported in bits (max 64)
 
     uint32 block_size;        ///< size of cache line (in bytes)
     uint8  word_size;         ///< CPU word size in bytes (1,2,4,8)
+
+    /**
+     * @brief SystemConfig constructor
+     */
+    SystemConfig(uint8 address, uint8 data, uint8 word_size, uint32 block_size)
+    : address_bus_width(address), data_bus_width(data), 
+        word_size(word_size), block_size(block_size)
+    {}
 
     /**
      * @brief total addressable memory in bytes
@@ -114,15 +125,14 @@ struct SystemConfig {
             
         return true;
     }
+};
 
-private:
-    static constexpr bool is_power_of_2(uint32 v) {
+constexpr bool is_power_of_2(uint32 v) {
         return v > 0 && (v & (v - 1)) == 0;
     }
 
-    static constexpr uint8_t log2_of(uint32 v) {
-        uint8 n = 0;
-        while (v >>= 1) ++n;
-        return n;
-    }
-};
+constexpr uint8_t log2_of(uint32 v) {
+    uint8 n = 0;
+    while (v >>= 1) ++n;
+    return n;
+}
