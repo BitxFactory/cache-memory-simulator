@@ -22,7 +22,14 @@
 
 #pragma once
 
+#include <atomic>
+#include <condition_variable>
+#include <future>
 #include <memory>
+#include <mutex>
+#include <queue>
+#include <thread>
+#include <vector>
 
 #include "dram_array.hpp"
 
@@ -56,5 +63,61 @@ private:
 
     DRAMConfig& dram_config;
 };
-    
+
+/**
+ * @struct DRAMTiming
+ * @brief timing of different dram cycle
+ */
+struct DRAMTiming {
+    uint32 precharge;  ///< tRP : time taken to complete a precharge operation in a bank
+    uint32 activate;   ///< tRCD: time between an active command and a column command
+    uint32 transfer;   ///< tCAS: time to transfer data in/out memory
+};
+
+/**
+ * @struct BankRequest
+ * @brief memory request to a bank
+ */
+struct BankRequest {
+    uint32 row_addr;       ///< row address
+    uint32 col_addr;   ///< column address
+    bool   is_write;   ///< read or write mode
+    std::vector<bool>& data; ///< data to be written, NULL if read mode
+
+    // two promises for
+    std::promise<uint64> open_row_done; ///< open row operation (precharge + activate) done
+    std::promise<uint64> result; ///< transfer operation done
+
+    /**
+     * @brief BankRequest constructor
+     */
+    BankRequest(uint32 row_addr, uint32 col_addr, bool is_write, std::vector<bool>& data);
+};
+
+/**
+ * @struct BankWorker
+ * @brief worker thread for a bank
+ */
+struct BankWorker {
+    std::unique_ptr<DRAMBank> bank;
+    std::unique_ptr<DRAMTiming> timings;
+
+    std::queue<BankRequest*> queue;
+    std::mutex               mtx;
+    std::condition_variable  cv;
+    std::thread              thread;
+    bool                     stop;
+    uint64                   current_cycle = 0;  // when this bank is next free
+
+    /**
+     * @brief BankWorker constructor
+     */
+    BankWorker(std::unique_ptr<DRAMBank> b, std::unique_ptr<DRAMTiming> t);
+
+    /**
+     * @brief handle requests in the queue
+     */
+    void handle_requests();
+};
+
 } // namespace dram

@@ -71,4 +71,44 @@ void DRAMBank::transfer_data(uint32 col_addr, bool is_write, std::vector<bool>& 
     }
 }
 
+BankRequest::BankRequest(uint32 r, uint32 c, bool is_write, std::vector<bool>& data)
+    : row_addr(r), col_addr(c), is_write(is_write), data(data) {}
+
+BankWorker::BankWorker(std::unique_ptr<DRAMBank> b, std::unique_ptr<DRAMTiming> t)
+    : bank(std::move(b)), timings(std::move(t)), stop(false) {}
+
+void BankWorker::handle_requests()
+{
+    // event loop
+    while (!stop) {
+        BankRequest* req = nullptr;
+
+        {
+            std::unique_lock<std::mutex> lk(mtx);
+            cv.wait(lk, [&]{ return stop || !queue.empty(); });
+            req = queue.front();
+            queue.pop();
+        }
+
+        // open row phase
+        uint64 open_row_start = current_cycle;
+        bank->open_row(req->row_addr);
+
+        uint64 open_row_end = open_row_start + timings->precharge + timings->activate;
+        // signal caller: open row done, next bank can be called
+        req->open_row_done.set_value(open_row_end);
+
+        // transfer phase — starts immediately after open_row
+        uint64 transfer_end = open_row_end + timings->transfer;
+        bank->transfer_data(
+            req->col_addr, req->is_write, req->data);
+
+        current_cycle = transfer_end;
+
+        // Signal caller: full request done, here is the completion cycle
+        req->result.set_value(transfer_end);
+
+    }
+}
+
 } // namespace dram
