@@ -30,7 +30,7 @@ namespace dram
 
 DRAMBank::DRAMBank(uint32 id, DRAMConfig& config): id(id), dram_config(config)
 {
-    arrays.resize(dram_config.number_of_banks());
+    arrays.resize(dram_config.number_of_subarrays());
 
     uint32 number_of_rows = 1LL << dram_config.row_bits;
     uint32 number_of_cols = 1LL << dram_config.col_bits;
@@ -53,7 +53,7 @@ void DRAMBank::open_row(uint32 row_addr)
     }
 }
 
-void DRAMBank::transfer_data(uint32 col_addr, bool is_write, std::vector<bool>& data)
+void DRAMBank::transfer_data(uint32 col_addr, bool is_write, std::span<uint8> data)
 {
     // read/write (t)
     for (uint32 i = 0; i < arrays.size(); i++) {
@@ -62,52 +62,45 @@ void DRAMBank::transfer_data(uint32 col_addr, bool is_write, std::vector<bool>& 
                 throw DRAMError("Failed to write to DRAM subarray " + std::to_string(i + 1) + " at column " + std::to_string(col_addr));
             }
         } else {
-            bool temp;
-            if (!arrays[i]->read(col_addr, temp)) {
+            if (!arrays[i]->read(col_addr, data[i])) {
                 throw DRAMError("Failed to read from DRAM subarray " + std::to_string(i + 1) + " at column " + std::to_string(col_addr));
             }
-            data[i] = temp;
         }
     }
 }
 
-BankRequest::BankRequest(uint32 r, uint32 c, bool is_write, std::vector<bool>& data)
-    : row_addr(r), col_addr(c), is_write(is_write), data(data) {}
-
-BankWorker::BankWorker(std::unique_ptr<DRAMBank> b, std::unique_ptr<DRAMTiming> t)
-    : bank(std::move(b)), timings(std::move(t)), stop(false) {}
-
-void BankWorker::handle_requests()
+DRAMBankEqClass::DRAMBankEqClass(uint32 id, DRAMConfig& config)
+    : id(id), dram_config(config)
 {
-    // event loop
-    while (!stop) {
-        BankRequest* req = nullptr;
+    banks.resize(dram_config.number_of_chips());
+    for (uint32 i = 0; i < dram_config.number_of_chips(); i++) {
+        banks[i] = std::make_unique<DRAMBank>(i + 1, dram_config);
+    }
+}
 
-        {
-            std::unique_lock<std::mutex> lk(mtx);
-            cv.wait(lk, [&]{ return stop || !queue.empty(); });
-            req = queue.front();
-            queue.pop();
-        }
+void DRAMBankEqClass::open_row(uint32 row_addr)
+{
+    for (uint32 i = 0; banks.size(); i++) {
+        banks[i]->open_row(row_addr);
+    }
+}
 
-        // open row phase
-        uint64 open_row_start = current_cycle;
-        bank->open_row(req->row_addr);
+void DRAMBankEqClass::transfer_data(uint32 col_addr, bool is_write, std::span<uint8> data)
+{
+    uint8 bus_width = dram_config.sys_config.data_bus_width;
+    uint8 chip_bits = dram_config.chip_width_bits;
+    uint32 num_of_banks = banks.size();
 
-        uint64 open_row_end = open_row_start + timings->precharge + timings->activate;
-        // signal caller: open row done, next bank can be called
-        req->open_row_done.set_value(open_row_end);
+    if (data.size() != bus_width) {
+        throw DRAMError("data size mismatch, must be equal to data bus width");
+    }
 
-        // transfer phase — starts immediately after open_row
-        uint64 transfer_end = open_row_end + timings->transfer;
-        bank->transfer_data(
-            req->col_addr, req->is_write, req->data);
+    if (num_of_banks != (bus_width / chip_bits)) {
+        throw DRAMError("number of banks mismatch in an equivalence class");
+    }
 
-        current_cycle = transfer_end;
-
-        // Signal caller: full request done, here is the completion cycle
-        req->result.set_value(transfer_end);
-
+    for (uint32 i = 0; i < num_of_banks; i++) {
+        banks[i]->transfer_data(col_addr, is_write, data.subspan(i * chip_bits, chip_bits));
     }
 }
 
