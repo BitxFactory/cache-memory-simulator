@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <span>
 #include <vector>
 
 #include "dram_config.hpp"
@@ -56,14 +57,21 @@ struct DRAMSubarray {
      * @param col column number
      * @returns true if successul otherwise false
      */
-    bool read(uint32 col_addr, bool& out);
+    bool read(uint32 col_addr, uint8& out);
 
     /**
      * @brief write a bit
      * @param col column number
      * @returns true if successul otherwise false
      */
-    bool write(uint32 col_addr, bool data);
+    bool write(uint32 col_addr, uint8 data);
+
+    /**
+     * @brief get row view
+     * @param r row number
+     * @returns a span
+     */
+    std::span<uint8> get_row(uint32 r);
 
 private:
     uint32 rows;            ///< number of rows in the subarray
@@ -71,9 +79,8 @@ private:
 
     uint32_t open_row;      ///< opened word line
     bool is_word_open;      ///< is word line active
-    std::vector<bool> row_buffer; ///< data latched in sense amplifier
-
-    std::vector<std::vector<bool>> cells; ///< the actual data
+    std::vector<uint8> row_buffer; ///< data latched in sense amplifier
+    std::vector<uint8> storage; ///< the actual data
 };
 
 } // namespace dram

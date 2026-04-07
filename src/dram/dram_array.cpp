@@ -26,15 +26,28 @@ namespace dram
 {
 
 DRAMSubarray::DRAMSubarray(uint32 rows, uint32 cols)
-: rows(rows), cols(cols), is_word_open(false)
+    : rows(rows), cols(cols), is_word_open(false), open_row(0),
+        storage(rows * cols, 0), row_buffer(cols, 0) {}
+
+std::span<uint8> DRAMSubarray::get_row(uint32 r)
 {
-    cells.resize(rows, std::vector<bool>(cols));
+    return std::span<uint8>(
+        &storage[r * cols],
+        cols
+    );
 }
 
 void DRAMSubarray::precharge() {
     if (!is_word_open) return;
     // write sense amplifier back to cells
-    cells[open_row] = row_buffer;
+    auto dst = get_row(open_row);
+
+    std::copy(
+        row_buffer.begin(),
+        row_buffer.end(),
+        dst.begin()
+    );
+
     is_word_open = false;
 }
 
@@ -42,21 +55,30 @@ bool DRAMSubarray::activate(uint32 row_addr) {
     if (is_word_open) return false;
     if (row_addr >= rows) return false;
 
-    row_buffer = cells[row_addr];
+    auto src = get_row(row_addr);
+
+    std::copy(
+        src.begin(),
+        src.end(),
+        row_buffer.begin()
+    );
+
     open_row = row_addr;
+    is_word_open = true;
+
     return true;
 }
 
-bool DRAMSubarray::read(uint32 col_addr, bool& out) {
-    if (open_row < 0) return false;
+bool DRAMSubarray::read(uint32 col_addr, uint8& out) {
+    if (is_word_open) return false;
     if (col_addr >= cols) return false;
 
     out = row_buffer[col_addr];
     return true;
 }
 
-bool DRAMSubarray::write(uint32 col_addr, bool data) {
-    if (open_row < 0) return false;
+bool DRAMSubarray::write(uint32 col_addr, uint8 data) {
+    if (!is_word_open) return false;
     if (col_addr >= cols) return false;
 
     row_buffer[col_addr] = data;
