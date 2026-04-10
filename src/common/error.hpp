@@ -20,3 +20,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma once
+
+#include <stdexcept>
+#include <string>
+
+/**
+ * @class DRAMError
+ * @brief Exception class for DRAM-related errors
+ */
+class DRAMError : public std::runtime_error {
+public:
+    explicit DRAMError(const std::string& message) : std::runtime_error(message) {}
+};
+
