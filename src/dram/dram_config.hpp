@@ -38,6 +38,36 @@ struct AddressMapping {
 };
 
 /**
+ * @struct DRAMRequest
+ * @brief  memory request
+ */
+struct DRAMRequest {
+    uint64 seq;       ///< arrival order
+    uint64 address;   ///< address
+
+    bool is_write;    ///< transfer mode
+    std::vector<uint8> data; ///< data
+
+    int client_fd;  ///< set by server
+
+    /**
+     * @brief DRAMRequest constructor
+     */
+    DRAMRequest(uint64 addr, bool is_write, std::vector<uint8> d);
+};
+
+/**
+ * @struct DRAMResponse
+ * @brief memory response
+ */
+struct DRAMResponse {
+    uint64 seq;       ///< arrival order
+    uint64 completion_cycle; ///< cycles to complete
+    bool success;    ///< response success
+    std::vector<uint8> data; ///< data for read requests
+};
+
+/**
  * @struct DRAMConfig
  * @brief configuration of a rank of a DRAM
  */
@@ -87,8 +117,15 @@ struct DRAMConfig {
     // validate
     bool validate(std::string* err = nullptr) const;
 
+    /**
+     * @brief extract
+     */
+    uint64 extract(uint64 address, uint64 mask);
+
 private:
     uint8 popcount(uint64 mask);
+
+    uint8 first_one_position(uint64 address);
 };
 
 } // namespace dram

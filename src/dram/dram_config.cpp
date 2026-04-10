@@ -114,13 +114,34 @@ bool DRAMConfig::validate(std::string* err) const {
     return true;
 }
 
-uint8 DRAMConfig::popcount(uint64 mask) {
+uint64 DRAMConfig::extract(uint64 address, uint64 mask)
+{
+    uint64 d = first_one_position(mask);
+    return (address & mask) / d;
+}
+
+uint8 DRAMConfig::popcount(uint64 mask)
+{
     uint8 count = 0;
     while (mask) {
         mask &= mask - 1;  // clears lowest set bit
         count++;
     }
     return count;
+}
+
+uint8 DRAMConfig::first_one_position(uint64 mask)
+{
+    assert(mask > 0 &&
+            "mask must be positive integer");
+
+    uint8 pos = 0;
+    while (mask % 2 == 0) {
+        pos++;
+        mask /= 2;
+    }
+
+    return pos;
 }
 
 constexpr uint32 DRAMConfig::number_of_chips() const {
