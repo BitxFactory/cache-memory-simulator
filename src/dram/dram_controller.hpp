@@ -22,11 +22,13 @@
 
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
 #include <thread>
 
+#include "../common/error.hpp"
 #include "dram_bank.hpp"
 
 namespace dram
@@ -38,34 +40,12 @@ const uint32 base_cols = 1024;
 const uint32 scale = 0.3;
 
 /**
- * @struct DRAMRequest
- * @brief  memory request
+ * @struct DRAMBankResult
+ * @brief per-bank output
  */
-struct DRAMRequest {
-    uint64 seq;       ///< arrival order
-    uint32 row_addr;  ///< row address
-    uint32 col_addr;  ///< column address
-
-    bool is_write;    ///< transfer mode
-    std::vector<uint8>& data; ///< data
-
-    int client_fd;  ///< set by server
-
-    /**
-     * @brief DRAMRequest constructor
-     */
-    DRAMRequest(uint32 r, uint32 c, bool is_write, std::vector<uint8>& d);
-};
-
-/**
- * @struct DRAMResponse
- * @brief memory response
- */
-struct DRAMResponse {
-    uint64 seq;       ///< arrival order
-    uint64 completion_cycle; ///< cycles to complete
-    bool success;    ///< response success
-    std::vector<uint8> data; ///< data for read requests
+struct DRAMBankResult {
+    uint64 completion_cycle;  ///< time of completion of request
+    std::vector<uint8> data;  ///< data read
 };
 
 /**
@@ -89,29 +69,41 @@ struct DRAMController {
     DRAMController(DRAMConfig& config, std::string socket_path);
 
     /**
-     * @brief setup controller server
+     * @brief DRAMController destructor
      */
-    void setup_server();
+    ~DRAMController();
 
     /**
-     * @brief run the memory controller
+     * @brief start the memory controller
      */
-    void run();
+    void start();
+
+    /**
+     * @brief gracefully shutdown memory controller
+     */
+    void stop();
 
 private:
+    void setup_server();
+
     void handle_request(int c_fd);
 
     void dispatcher_loop();
 
     DRAMTiming calculate_timings();
 
-    std::vector<std::unique_ptr<DRAMBankEqClass>> eq_class;
-    DRAMConfig& dram_config;
+    uint64 get_bank_id(uint64 address);
+    uint64 get_row_id(uint64 address);
+    uint64 get_col_id(uint64 address);
 
-    DRAMTiming timings;
+    std::vector<std::unique_ptr<DRAMBankEqClass>> eq_class; ///< equivalent class of dram banks
+    DRAMConfig& dram_config;  ///< dram configuration
 
-    std::string socket_path;
-    int controller_fd = -1;
+    DRAMTiming timings;  ///< timing associated with dram memory access cycle
+
+    int controller_fd = -1;   ///< file descriptor of controller server
+    std::string socket_path;  ///< socket path
+    std::atomic<bool> server_stop{false}; ///< flag to stop server
 
     struct SeqCmp {
         bool operator()(const DRAMRequest* a, const DRAMRequest* b) {
@@ -125,7 +117,9 @@ private:
     std::mutex  dispatcher_mtx;     ///< dispatcher mutex lock
     std::condition_variable dispatcher_cv; ///< dispatcher conditional variable
 
-    bool dispatcher_stop = false;
+    bool dispatcher_stop = false;       ///< flag to stop dispatcher thread
+    std::atomic<uint64> current_cycle;  ///< cycles elapsed (accessing memory)
+    std::atomic<uint64> next_seq;       ///< counter for client requests
 }; 
 
 } // namespace dram
