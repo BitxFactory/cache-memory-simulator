@@ -26,7 +26,7 @@
 #include <cassert>
 #include <string>
 
-#include <utility.hpp>
+#include <common/utility.hpp>
 
 constexpr bool is_power_of_2(uint32 v);
 constexpr uint8_t log2_of(uint32 v);

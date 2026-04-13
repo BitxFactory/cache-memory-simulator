@@ -24,7 +24,7 @@
 
 #include <vector>
 
-#include <utility.hpp>
+#include <common/utility.hpp>
 
 class Memory {
 public:

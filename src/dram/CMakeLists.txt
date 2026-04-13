@@ -29,6 +29,12 @@ file(GLOB SOURCES ${PROJECT_SOURCE_DIR}/*.cpp)
 add_library(${PROJECT_NAME} ${SOURCES})
 add_library(memsim::dram ALIAS ${PROJECT_NAME})
 
+target_link_libraries(
+    ${PROJECT_NAME}
+    PUBLIC
+    memsim::common
+)
+
 target_include_directories(
     ${PROJECT_NAME}
     PUBLIC
