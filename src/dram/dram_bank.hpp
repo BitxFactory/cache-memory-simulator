@@ -24,7 +24,7 @@
 
 #include <memory>
 
-#include "dram_array.hpp"
+#include <dram_array.hpp>
 
 namespace dram
 {

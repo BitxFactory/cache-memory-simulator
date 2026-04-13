@@ -28,7 +28,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "dram.hpp"
+#include <dram.hpp>
 
 namespace dram
 {

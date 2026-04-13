@@ -22,7 +22,7 @@
 
 #include <stdexcept>
 
-#include "dram_config.hpp"
+#include <dram_config.hpp>
 
 namespace dram
 {

@@ -24,9 +24,9 @@
 
 #include <vector>
 
-#include "../common/memory.hpp"
-#include "../common/error.hpp"
-#include "dram_config.hpp"
+#include <common/memory.hpp>
+#include <common/error.hpp>
+#include <dram_config.hpp>
 
 namespace dram
 {

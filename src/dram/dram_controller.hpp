@@ -28,8 +28,8 @@
 #include <queue>
 #include <thread>
 
-#include "../common/error.hpp"
-#include "dram_bank.hpp"
+#include <common/error.hpp>
+#include <dram_bank.hpp>
 
 namespace dram
 {

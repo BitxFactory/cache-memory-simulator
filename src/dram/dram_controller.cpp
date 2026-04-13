@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <unordered_map>
 
-#include "dram_controller.hpp"
+#include <dram_controller.hpp>
 
 namespace dram
 {

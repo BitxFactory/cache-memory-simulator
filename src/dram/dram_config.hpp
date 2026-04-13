@@ -20,8 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "../common/utility.hpp"
-#include "../common/system_config.hpp"
+#include <vector>
+
+#include <common/utility.hpp>
+#include <common/system_config.hpp>
 
 namespace dram
 {

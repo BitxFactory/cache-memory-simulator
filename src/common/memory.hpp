@@ -22,7 +22,9 @@
 
 #pragma once
 
-#include "utility.hpp"
+#include <vector>
+
+#include <utility.hpp>
 
 class Memory {
 public:
